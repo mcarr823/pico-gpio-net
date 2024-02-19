@@ -130,3 +130,53 @@ class PicoGpioNetDaemon():
 
         command = self.take_from_buffer_single(1)[0]
         return bytearray([1])
+    """
+        Reads a number of bytes from the socket into a buffer.
+    """
+    def read_into_buffer(self):
+
+        # Cap reads at a maximum size of self.max_read_size
+        # This is because Pi Pico boards have very little RAM.
+        # So we can't necessarily read everything from the buffer
+        # in one go.
+        bytesRead = self.client.recv(self.max_read_size)
+        length = len(bytesRead)
+
+        if length == 0:
+            raise ValueError('Socket connection closed')
+        self.buffer.extend(bytesRead)
+        print(f"Read {length} bytes")
+
+    """
+        Takes some bytes from the buffer and returns them.
+
+        numberOfBytes: the number of bytes to take from the buffer.
+    """
+    def take_from_buffer_single(self, numberOfBytes):
+        returnData = bytearray()
+        for loopBytes in self.take_from_buffer(numberOfBytes):
+            #print(f"Appending {loopBytes}")
+            returnData.extend(loopBytes)
+        return returnData
+
+    """
+        Takes some bytes from the buffer and yields them.
+
+        numberOfBytes: the number of bytes to take from the buffer.
+    """
+    def take_from_buffer(self, numberOfBytes):
+        returnedBytes = 0
+        while returnedBytes < numberOfBytes:
+
+            remaining = numberOfBytes - returnedBytes
+            bufferLength = len(self.buffer)
+
+            # If the buffer is empty, read more from the socket
+            if bufferLength == 0:
+                self.read_into_buffer()
+                bufferLength = len(self.buffer)
+
+            bytesToRead = min(remaining, bufferLength)
+            returnedBytes += bytesToRead
+            yield self.buffer[:bytesToRead]
+            self.buffer = self.buffer[bytesToRead:]
