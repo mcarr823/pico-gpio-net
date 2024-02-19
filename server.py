@@ -6,6 +6,44 @@ from machine import SPI, Pin
 
 class PicoGpioNetDaemon():
 
+    # Requests are received as byte arrays in a loose format.
+    # byte[0] is always a command.
+    # The rest of the request changes depending on the command.
+    #
+    # It is either:
+    # [command][length][data]
+    # or
+    # [command][data]
+    #
+    # command is always a single byte.
+    # length and data may be bigger or smaller depending on the command.
+    # See the comments on individual command functions for more info.
+    #
+    # This format is used due to speed and RAM constraints.
+    # Running a proper httpd daemon and using data formats like XML or JSON
+    # would add too much overhead.
+    #
+    # Note that commands can be chained together in a continuous stream.
+    # So if you send through multiple commands, one after the other, in a
+    # single stream of bytes, then it will handle all of them sequentially.
+    #
+    # For example:
+    # cmd1 = [1, 1, 16, 1]
+    # cmd2 = [2, 0, 0, 4, 0, ...]
+    # cmd3 = [1, 1, 16, 0]
+    # cmd = [*cmd1, *cmd2, *cmd3]
+    #
+    # In the above, three different commands have been joined together into
+    # a single byte array.
+    #
+    # cmd1 sets pin 16 to HIGH (1).
+    # cmd2 writes data to SPI.
+    # cmd3 sets pin 16 to LOW (0).
+    #
+    # By sending through all three in one go (cmd) we can avoid the extra
+    # overhead of making and waiting on multiple network requests.
+
+    
     CMD_SET_PIN_SINGLE = 0
     CMD_SET_PIN_MULTI = 1
     CMD_WRITE_BYTES = 2
@@ -177,6 +215,10 @@ class PicoGpioNetDaemon():
 
             print("Unknown")
             #TODO: raise exception
+        
+        # Default return value.
+        # Most of these functions write values instead of reading them,
+        # so we just return a single byte to say we're done.
         return bytearray([1])
 
     """
