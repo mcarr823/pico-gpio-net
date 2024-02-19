@@ -10,6 +10,7 @@ class PicoGpioNetDaemon():
     CMD_WRITE_BYTES = 2
     CMD_GET_PIN_SINGLE = 3
     CMD_GET_PIN_MULTI = 4
+    CMD_DELAY = 5
 
     def __init__(self, ssid, password, maxSizeKb):
         self.ssid = ssid
@@ -159,11 +160,50 @@ class PicoGpioNetDaemon():
         elif command == self.CMD_GET_PIN_MULTI:
 
             return self.cmd_get_pin_multi()
+
+        elif command == self.CMD_DELAY:
+
+            self.cmd_delay()
         else:
 
             print("Unknown")
             #TODO: raise exception
         return bytearray([1])
+
+    """
+        CMD_DELAY
+
+        Delays execution of the thread for a given number of milliseconds.
+        This might be used when you want to send multiple commands to the
+        Pico at once, but enforce a delay between them.
+
+        eg. If command #1 performs some kind of hardware initialization,
+        and it needs to finish before command #2 can run.
+        This way those two commands can still be sent in the same request,
+        but executed with a suitable delay between them.
+
+        byte[0]: first byte of the delay
+        byte[1]: second byte of the delay
+
+        Example: [2, 5]
+        first delay byte: 2 (00000010)
+        second delay byte: 5 (00000101)
+
+        The delay bytes (00000010 00000101) converted to a big endian int
+        give a value of 517.
+
+        So in this example, we tell the Pico to wait for 517 milliseconds
+        before moving on to the next command.
+    """
+    def cmd_delay(self):
+        print("Delay")
+
+        # 2 bytes. max size: 65535
+        delay_ms = self.read_length_header(2)
+        delay_seconds = float(delay_ms) / 1000.0
+
+        print(f"Seconds: {delay_seconds}")
+        sleep(delay_seconds)
 
     """
         CMD_WRITE_BYTES
