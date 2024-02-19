@@ -1,3 +1,4 @@
+import network
 import machine
 
 class PicoGpioNetDaemon():
@@ -33,3 +34,23 @@ class PicoGpioNetDaemon():
     def close(self):
         self.spi.deinit()
         machine.reset()
+
+    """
+        Connects to a wifi network and returns the IP address
+        assigned to this device.
+
+        This function will continue trying to connect indefinitely
+        until it succeeds.
+    """
+    def connect(self):
+        #Connect to WLAN
+        wlan = network.WLAN(network.STA_IF)
+        wlan.active(True)
+        wlan.connect(self.ssid, self.password)
+        while wlan.isconnected() == False:
+            print('Waiting for connection...')
+            sleep(1)
+        print(wlan.ifconfig())
+        ip = wlan.ifconfig()[0]
+        print(f'Connected on {ip}')
+        return ip
