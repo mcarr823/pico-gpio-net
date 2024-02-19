@@ -7,6 +7,7 @@ class PicoGpioNetDaemon():
 
     CMD_SET_PIN_SINGLE = 0
     CMD_SET_PIN_MULTI = 1
+    CMD_WRITE_BYTES = 2
 
     def __init__(self, ssid, password, maxSizeKb):
         self.ssid = ssid
@@ -144,11 +145,49 @@ class PicoGpioNetDaemon():
             
             self.cmd_set_pin_multi()
 
+        elif command == self.CMD_WRITE_BYTES:
+
+            self.cmd_write_bytes(numberOfBytes)
         else:
 
             print("Unknown")
             #TODO: raise exception
         return bytearray([1])
+
+    """
+        CMD_WRITE_BYTES
+
+        Writes a bunch of raw byte data over SPI.
+
+        byte[0]: first length byte
+        byte[1]: second length byte
+        byte[2]: third length byte
+        byte[3]: fourth length byte
+        byte[4...]: raw byte data to write over SPI
+
+        The first four bytes are a big-endian int which define the size
+        of the request.
+        The remaining bytes, with a length equal to that int, are written
+        directly to spidev.
+
+        Example: [0, 0, 4, 0, ...]
+        Length of [0, 0, 4, 0] (00000000 00000000 00000100 00000000)
+        which equals 1024 when converted to a big-endian int.
+        The remaining bytes, which should be 1024 in length, are the data
+        to write to spidev.
+    """
+    def cmd_write_bytes(self):
+
+        print("Write bytes")
+
+        # 4 bytes. max size: 4,294,967,295
+        numberOfBytes = self.read_length_header(4)
+
+        #print(f"Writing {numberOfBytes} bytes")
+        for byteArray in self.take_from_buffer(numberOfBytes):
+            self.spi.write(byteArray)
+
+        #print(f"Finished writing")
     """
         CMD_SET_PIN_SINGLE
 
