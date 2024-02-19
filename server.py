@@ -1,5 +1,6 @@
 import network
 import usocket
+from time import sleep
 import machine
 from machine import SPI, Pin
 
@@ -11,6 +12,9 @@ class PicoGpioNetDaemon():
     CMD_GET_PIN_SINGLE = 3
     CMD_GET_PIN_MULTI = 4
     CMD_DELAY = 5
+    CMD_WAIT_FOR_PIN = 6
+
+
 
     def __init__(self, ssid, password, maxSizeKb):
         self.ssid = ssid
@@ -164,6 +168,11 @@ class PicoGpioNetDaemon():
         elif command == self.CMD_DELAY:
 
             self.cmd_delay()
+
+        elif command == self.CMD_WAIT_FOR_PIN:
+
+            self.cmd_wait_for_pin()
+
         else:
 
             print("Unknown")
@@ -204,6 +213,48 @@ class PicoGpioNetDaemon():
 
         print(f"Seconds: {delay_seconds}")
         sleep(delay_seconds)
+
+    """
+        CMD_WAIT_FOR_PIN
+
+        Waits for a specific pin to reach a specific value.
+        For example, to wait for the BUSY pin to have a value of 0,
+        signifying that the GPIO device is no longer busy.
+
+        The Pico will periodically re-check the state of the pin
+        based on the `delay` value set in the request.
+
+        byte[0]: pin to read
+        byte[1]: desired value
+        byte[2]: first byte of the delay
+        byte[3]: second byte of the delay
+
+        Example: [8, 1, 2, 5]
+        pin to read: 8
+        value to wait for: 1
+        first delay byte: 2 (00000010)
+        second delay byte: 5 (00000101)
+
+        The delay bytes (00000010 00000101) converted to a big endian int
+        give a value of 517.
+
+        So in this example, we wait for pin 8 to have a value of 1.
+        We re-check the pin every 517 milliseconds until the value is 1.
+    """
+    def cmd_wait_for_pin(self):
+
+        print("Wait for pin")
+
+        data = self.take_from_buffer_single(2)
+        pin = data[0]
+        value = data[1]
+
+        # 2 bytes. max size: 65535
+        delay_ms = self.read_length_header(2)
+        delay_seconds = float(delay_ms) / 1000.0
+
+        while self.get_pin(pin) != value:
+            sleep(delay_seconds)
 
     """
         CMD_WRITE_BYTES
