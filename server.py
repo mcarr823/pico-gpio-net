@@ -199,6 +199,10 @@ class PicoGpioNetDaemon():
             self.spi.write(byteArray)
 
         #print(f"Finished writing")
+
+    def read_spi(self, numberOfBytes):
+        return self.spi.read(numberOfBytes)
+
     """
         CMD_SET_PIN_SINGLE
 
