@@ -1,8 +1,11 @@
 import network
 import machine
+from machine import SPI, Pin
 
 class PicoGpioNetDaemon():
 
+    CMD_SET_PIN_SINGLE = 0
+    CMD_SET_PIN_MULTI = 1
 
     def __init__(self, ssid, password, maxSizeKb):
         self.ssid = ssid
@@ -129,7 +132,95 @@ class PicoGpioNetDaemon():
         print("Awaiting command")
 
         command = self.take_from_buffer_single(1)[0]
+
+        #print(f"Command {command}")
+
+        if command == self.CMD_SET_PIN_SINGLE:
+            
+            self.cmd_set_pin_single()
+
+        elif command == self.CMD_SET_PIN_MULTI:
+            
+            self.cmd_set_pin_multi()
+
+        else:
+
+            print("Unknown")
+            #TODO: raise exception
         return bytearray([1])
+    """
+        CMD_SET_PIN_SINGLE
+
+        Sets the values of one GPIO pin.
+
+        byte[0]: pin
+        byte[1]: value
+
+        Example: [16, 0]
+        Changes pin 16 to a value of 0
+    """
+    def cmd_set_pin_single(self):
+
+        print("Set pin")
+
+        # 1 byte. max size: 255
+        pair = self.take_from_buffer_single(2)
+
+        self.set_pin(pair)
+
+    """
+        CMD_SET_PIN_MULTI
+
+        Sets the values of one or more GPIO pins.
+
+        byte[0]: number of pins to change (max 255)
+        byte[1+2*n]: pins
+        byte[2+2*n]: values
+
+        The first byte defines the number of pins to be altered.
+        The second, fourth, sixth, etc. bytes are pins.
+        The third, fifth, seventh, etc. bytes are value.
+
+        So the first byte is how many pin:value pairs there are.
+        The remaining bytes are pairs of a pin and a value to set for that pin.
+
+        Example: [2, 16, 0, 18, 1]
+        2 pins to change
+        first is pin 16, change value to 0
+        second is pin 18, change value to 1
+    """
+    def cmd_set_pin_multi(self):
+
+        print("Set pins")
+
+        # 1 byte. max size: 255
+        numberOfPairs = self.read_length_header(1)
+
+        # Read double that, because each pin also has a value paired with it
+        numberOfBytes = numberOfPairs * 2
+
+        for pairs in self.take_from_buffer(numberOfBytes):
+            length = len(pairs)
+            for i in range(0, length, 2):
+                self.set_pin(pairs[i])
+
+    """
+        Sets a pin to the specified value.
+
+        pair[0] is the number of a pin.
+        pair[1] is the value to set that pin to.
+    """
+    def set_pin(self, pair):
+        pin = pairs[i]
+        value = pairs[i+1]
+        print(f"Setting pin {pin} to {value}")
+
+        self.cache_pin(pin)
+        self.pins[pin].value(value)
+
+    def cache_pin(self, pin):
+        if pin not in self.pins:
+            self.pins[pin] = machine.Pin(pin)
     """
         Reads a header from the socket to determine the length of a request.
 
