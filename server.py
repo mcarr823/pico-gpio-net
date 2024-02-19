@@ -67,3 +67,66 @@ class PicoGpioNetDaemon():
         connection.bind(address)
         connection.listen(1)
         return connection
+
+    """
+        This function is the main content loop and should be run
+        in order to kick everything off.
+        It connects to wifi, opens a socket, waits for connections, then
+        handles the received data.
+    """
+    def run_daemon(self, port):
+
+        # Connect to wifi, get an IP address from the router
+        ip = self.connect()
+
+        # Open a socket connection
+        serversocket = self.open_socket(ip, port)
+
+        print("Serving data")
+        while True:
+
+            print("Awaiting connection")
+
+            # Wait for a client to connect
+            (clientsocket, address) = serversocket.accept()
+            
+            # Client has connected
+            self.client = clientsocket
+            
+            # Flush the buffer, in case of previous connection aborting
+            self.buffer = bytearray()
+
+            # Wait indefinitely for data from the client.
+            # Stop if the client disconnects, or if execution is
+            # interrupted.
+            while True:
+                try:
+
+                    # Perform a command in response to data from the client
+                    result = self.run_command()
+
+                    # Send a response to the client
+                    self.client.send(result)
+
+                except Exception as e:
+                    print(e)
+
+                    # Close the socket connection
+                    self.client.close()
+
+                    # Break the while loop and wait for a new client
+                    break
+
+    """
+        This function waits for byte data from a client and
+        handles the data accordingly by calling the expected
+        function.
+
+        It returns a byte array, which is sent back to the client.
+    """
+    def run_command(self):
+
+        print("Awaiting command")
+
+        command = self.take_from_buffer_single(1)[0]
+        return bytearray([1])
