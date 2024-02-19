@@ -54,3 +54,16 @@ class PicoGpioNetDaemon():
         ip = wlan.ifconfig()[0]
         print(f'Connected on {ip}')
         return ip
+
+    """
+        Opens a socket and listens for incoming connections.
+
+        Returns the socket connection.
+    """
+    def open_socket(self, ip, port):
+        # Open a socket
+        address = (ip, port)
+        connection = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
+        connection.bind(address)
+        connection.listen(1)
+        return connection
