@@ -73,6 +73,9 @@ class PicoGpioNetDaemon():
         This function can be overridden by a subclass of
         PicoGpioNetDaemon in order to customize the default
         pin setup, change the SPI settings, and so on.
+
+        See examples/server_epd2in9v2.py for an example of how
+        and why you might do this.
     """
     def init_spi(self):
         self.spi = machine.SPI(1, baudrate=4000_000)
