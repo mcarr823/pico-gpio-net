@@ -8,6 +8,8 @@ class PicoGpioNetDaemon():
     CMD_SET_PIN_SINGLE = 0
     CMD_SET_PIN_MULTI = 1
     CMD_WRITE_BYTES = 2
+    CMD_GET_PIN_SINGLE = 3
+    CMD_GET_PIN_MULTI = 4
 
     def __init__(self, ssid, password, maxSizeKb):
         self.ssid = ssid
@@ -148,6 +150,15 @@ class PicoGpioNetDaemon():
         elif command == self.CMD_WRITE_BYTES:
 
             self.cmd_write_bytes(numberOfBytes)
+
+        elif command == self.CMD_GET_PIN_SINGLE:
+
+            result = self.cmd_get_pin_single(pin)
+            return bytearray([result])
+
+        elif command == self.CMD_GET_PIN_MULTI:
+
+            return self.cmd_get_pin_multi()
         else:
 
             print("Unknown")
@@ -261,6 +272,59 @@ class PicoGpioNetDaemon():
     def cache_pin(self, pin):
         if pin not in self.pins:
             self.pins[pin] = machine.Pin(pin)
+
+    """
+        CMD_GET_PIN_MULTI
+
+        Returns a list containing the states of multiple pins
+
+        byte[0]: number of pins to read (max 255)
+        byte[1...]: pins to read
+
+        Example: [2, 16, 18]
+        pins to read: 2
+        first pin: 16
+        second pin: 18
+    """
+    def cmd_get_pin_multi(self):
+
+        print("Get pins")
+
+        # 1 byte. max size: 255
+        numberOfBytes = self.read_length_header(1)
+
+        returnData = bytearray()
+        for byteArray in self.take_from_buffer(numberOfBytes):
+            for pin in byteArray:
+                v = self.get_pin(pin)
+                returnData.append(v)
+        return returnData
+
+    """
+        CMD_GET_PIN_SINGLE
+
+        Returns the value of a single pin
+
+        byte[0]: pin to read
+
+        Example: [18]
+        This request would read a single pin: 18
+        It would then return the state of that pin as an int.
+    """
+    def cmd_get_pin_single(self):
+
+        print("Get pin single")
+
+        # Pin to read
+        pin = self.take_from_buffer_single(1)
+
+        return self.get_pin(pin)
+
+    def get_pin(self, pin):
+        print(f"Getting pin {pin}")
+        self.cache_pin(pin)
+        return self.pins[pin].value()
+
     """
         Reads a header from the socket to determine the length of a request.
 
