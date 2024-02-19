@@ -1,4 +1,5 @@
 import network
+import usocket
 import machine
 from machine import SPI, Pin
 
