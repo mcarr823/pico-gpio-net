@@ -131,6 +131,30 @@ class PicoGpioNetDaemon():
         command = self.take_from_buffer_single(1)[0]
         return bytearray([1])
     """
+        Reads a header from the socket to determine the length of a request.
+
+        numberOfBytes: the number of bytes to read from the socket
+        and interpret as an int.
+    """
+    def read_length_header(self, numberOfBytes):
+
+        #print("Waiting for length bytes")
+        
+        request = self.take_from_buffer_single(numberOfBytes)
+        #print(f"Received {len(request)} bytes")
+        #print(f"Received {request} bytes")
+
+        # Convert from byte[] to bytearray, because micropython
+        # won't let from_bytes work with byte[]
+        request = bytearray(request)
+
+        # Convert the bytes to an unsigned int
+        intvalue = int.from_bytes(request, 'big')
+        #print(f"Int: {intvalue}")
+
+        return intvalue
+
+    """
         Reads a number of bytes from the socket into a buffer.
     """
     def read_into_buffer(self):
