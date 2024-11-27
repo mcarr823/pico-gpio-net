@@ -195,11 +195,11 @@ class PicoGpioNetDaemon():
 
         elif command == self.CMD_WRITE_BYTES:
 
-            self.cmd_write_bytes(numberOfBytes)
+            self.cmd_write_bytes()
 
         elif command == self.CMD_GET_PIN_SINGLE:
 
-            result = self.cmd_get_pin_single(pin)
+            result = self.cmd_get_pin_single()
             return bytearray([result])
 
         elif command == self.CMD_GET_PIN_MULTI:
@@ -393,7 +393,7 @@ class PicoGpioNetDaemon():
         for pairs in self.take_from_buffer(numberOfBytes):
             length = len(pairs)
             for i in range(0, length, 2):
-                self.set_pin(pairs[i])
+                self.set_pin(pairs[i:i+2])
 
     """
         Sets a pin to the specified value.
@@ -402,8 +402,8 @@ class PicoGpioNetDaemon():
         pair[1] is the value to set that pin to.
     """
     def set_pin(self, pair):
-        pin = pairs[i]
-        value = pairs[i+1]
+        pin = pair[0]
+        value = pair[1]
         print(f"Setting pin {pin} to {value}")
 
         self.cache_pin(pin)
@@ -458,7 +458,7 @@ class PicoGpioNetDaemon():
         # Pin to read
         pin = self.take_from_buffer_single(1)
 
-        return self.get_pin(pin)
+        return self.get_pin(pin[0])
 
     def get_pin(self, pin):
         print(f"Getting pin {pin}")
