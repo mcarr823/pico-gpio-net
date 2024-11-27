@@ -6,6 +6,10 @@ from machine import SPI, Pin
 
 class PicoGpioNetDaemon():
 
+    # Integer which is used to advertise which commands this Pico understands.
+    # This number should increment every time a new command is introduced.
+    apiVersion = 2
+
     # Requests are received as byte arrays in a loose format.
     # byte[0] is always a command.
     # The rest of the request changes depending on the command.
@@ -51,12 +55,15 @@ class PicoGpioNetDaemon():
     CMD_GET_PIN_MULTI = 4
     CMD_DELAY = 5
     CMD_WAIT_FOR_PIN = 6
+    CMD_GET_NAME = 7
+    CMD_GET_API_VERSION = 8
 
 
 
-    def __init__(self, ssid, password, maxSizeKb):
+    def __init__(self, ssid, password, maxSizeKb, name):
         self.ssid = ssid
         self.password = password
+        self.name = name
 
         # Maximum number of bytes to read in a single loop iteration.
         # The Pi Pico has 264kB of SRAM, so let's make it smaller than that...
@@ -213,6 +220,19 @@ class PicoGpioNetDaemon():
         elif command == self.CMD_WAIT_FOR_PIN:
 
             self.cmd_wait_for_pin()
+
+        elif command == self.CMD_GET_NAME:
+
+            return self.cmd_get_name()
+
+        elif command == self.CMD_GET_API_VERSION:
+
+            # Return the API version as a single byte.
+            # This should probably be sent as 2 or more bytes for the sake
+            # of future expansion.
+            # But I doubt that the API version will ever grow large enough
+            # for that to be a problem, so... 1 byte it is.
+            return bytearray([self.apiVersion])
 
         else:
 
@@ -464,6 +484,41 @@ class PicoGpioNetDaemon():
         print(f"Getting pin {pin}")
         self.cache_pin(pin)
         return self.pins[pin].value()
+
+    """
+        CMD_GET_NAME
+
+        Returns the name of this device.
+
+        The first byte returned is the length of the name.
+
+        The remaining bytes (the number of which should match the first byte)
+        should be the name.
+
+        For example, let's say the name of the device is "Raspberry Pi Pico 1".
+        That name is 19 characters in length.
+
+        So the return data would be:
+        [19, 82, 97, 115, 112, 98, 101, 114, 114, 121, 32, 80, 105, 32, 80, 105, 99, 111, 32, 49]
+
+        That's 20 bytes in length.
+        The first byte is 19, which tells us there are 19 more bytes to read.
+        The remaining 19 bytes are the name, encoded as bytes.
+    """
+    def cmd_get_name(self):
+
+        print(f"Get name ({self.name})")
+
+        # Encode the name as a byte array
+        nameBytes = self.name.encode("UTF-8")
+        
+        # Get length of the name
+        nameLength = len(nameBytes)
+
+        # Encode the length
+        nameLengthBytes = nameLength.to_bytes(1, 'big')
+
+        return nameLengthBytes + nameBytes
 
     """
         Reads a header from the socket to determine the length of a request.

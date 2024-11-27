@@ -39,6 +39,8 @@ class PicoGpioNetClient:
     CMD_GET_PIN_MULTI = 4
     CMD_DELAY = 5
     CMD_WAIT_FOR_PIN = 6
+    CMD_GET_NAME = 7
+    CMD_GET_API_VERSION = 8
 
     # Socket connection
     sock = False
@@ -250,3 +252,37 @@ class PicoGpioNetClient:
         delayBytes = delay_ms.to_bytes(2, 'big')
         cmd = [self.CMD_WAIT_FOR_PIN, pin, value, *delayBytes]
         return self.do_write_request(cmd)
+
+    """
+        Asks the Pico device to identify itself.
+
+        The first byte returned by the Pico is the length of the name.
+        The remaining bytes are the encoded name.
+
+        Command introduced in API version 2.
+    """
+    def get_name(self):
+        print("Getting device name")
+        cmd = [self.CMD_GET_NAME]
+        lengthBytes = self.do_read_request(cmd, 1)
+        length = int.from_bytes(lengthBytes)
+        nameBytes = self.sock.recv(length)
+        return nameBytes.decode()
+
+    """
+        Asks the Pico device which version of pico-gpio-net it is running.
+
+        The API version is used to identify which commands the Pico is
+        able to understand and respond to.
+
+        Command introduced in API version 2.
+
+        Note that although it was introduced in version 2, this command
+        "accidentally" works in version 1 as well, since the default
+        response for an unknown command is [1].
+    """
+    def get_api_version(self):
+        print(f"Getting API version")
+        cmd = [self.CMD_GET_API_VERSION]
+        bytes = self.do_read_request(cmd, 1)
+        return int.from_bytes(bytes)

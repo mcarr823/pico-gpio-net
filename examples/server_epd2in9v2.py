@@ -42,7 +42,8 @@ class Epd2in9v2PicoGpioNetDaemon(PicoGpioNetDaemon):
 httpd = Epd2in9v2PicoGpioNetDaemon(
     ssid = 'MY_WIFI_SSID',
     password = 'MY_WIFI_PASSWORD',
-    maxSizeKb = 32
+    maxSizeKb = 32,
+    name = 'My Pico'
 )
 
 try:
