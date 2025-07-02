@@ -1,5 +1,8 @@
 # pico-gpio-net
 
+[![CI](https://github.com/mcarr823/pico-gpio-net/actions/workflows/ci.yml/badge.svg)](https://github.com/mcarr823/pico-gpio-net/actions/workflows/ci.yml)
+
+
 ## What is it?
 
 This program is made to run on a Raspberry Pi Pico WH with MicroPython.
