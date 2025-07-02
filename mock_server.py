@@ -205,7 +205,7 @@ class PicoGpioNetDaemon():
         print(f"Get name ({self.name})")
         nameBytes = self.name.encode()
         nameLength = len(nameBytes)
-        nameLengthBytes = nameLength.to_bytes()
+        nameLengthBytes = nameLength.to_bytes(1, 'big')
         return nameLengthBytes + nameBytes
 
     def read_length_header(self, numberOfBytes):
