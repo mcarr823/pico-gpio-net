@@ -1,15 +1,6 @@
 import socket
 from time import sleep
 
-
-### Change these variables to suit your application
-
-ssid = ''
-password = ''
-maxSizeKb = 32
-port = 8080
-name = ''
-
 class PicoGpioNetDaemon():
 
     apiVersion = 2
@@ -253,21 +244,31 @@ class PicoGpioNetDaemon():
             yield self.buffer[:bytesToRead]
             self.buffer = self.buffer[bytesToRead:]
 
-httpd = PicoGpioNetDaemon(
-    ssid = '',
-    password = '',
-    maxSizeKb = 32,
+if __name__ == '__main__':
+
+    ### Change these variables to suit your application
+
+    ssid = ''
+    password = ''
+    maxSizeKb = 32
+    port = 8080
     name = 'Mock server'
-)
 
-try:
-    # Connects the daemon to a network and starts listening
-    # on the given port for incoming data connections.
-    # Runs indefinitely until keyboard interrupt.
-    httpd.run_daemon(port = 8080)
+    httpd = PicoGpioNetDaemon(
+        ssid = ssid,
+        password = password,
+        maxSizeKb = maxSizeKb,
+        name = name
+    )
 
-except KeyboardInterrupt:
+    try:
+        # Connects the daemon to a network and starts listening
+        # on the given port for incoming data connections.
+        # Runs indefinitely until keyboard interrupt.
+        httpd.run_daemon(port = port)
 
-    # Release the resources held by the daemon and stop listening
-    # for incoming connections.
-    httpd.close()
+    except KeyboardInterrupt:
+
+        # Release the resources held by the daemon and stop listening
+        # for incoming connections.
+        httpd.close()
