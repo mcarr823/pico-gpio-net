@@ -12,7 +12,7 @@ name = ''
 
 class PicoGpioNetDaemon():
 
-    apiVerson = 2
+    apiVersion = 2
     
     CMD_SET_PIN_SINGLE = 0
     CMD_SET_PIN_MULTI = 1
@@ -119,7 +119,7 @@ class PicoGpioNetDaemon():
 
         elif command == self.CMD_GET_API_VERSION:
 
-            return bytearray([self.apiVerson])
+            return bytearray([self.apiVersion])
 
         else:
 
