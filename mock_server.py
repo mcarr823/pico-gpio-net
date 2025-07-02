@@ -33,12 +33,12 @@ class PicoGpioNetDaemon():
     def close(self):
         pass
 
-    def connect(self):
+    def connect(self) -> str:
         ip = '127.0.0.1'
         print(f'Connected on {ip}')
         return ip
 
-    def open_socket(self, ip, port):
+    def open_socket(self, ip, port) -> socket.socket:
         address = (ip, port)
         connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         connection.bind(address)
